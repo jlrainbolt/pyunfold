@@ -83,6 +83,8 @@ def iterative_unfold(data=None, data_err=None, response=None,
                 Number of unfolding iterations
             unfolding_matrix
                 Unfolding matrix
+            covariance_matrix
+                Covariance matrix
 
     unfolding_iters : pandas.DataFrame
         Returned if ``return_iterations`` is True. DataFrame containing the
@@ -213,7 +215,8 @@ def _unfold(prior=None, mixer=None, ts_func=None, max_iter=100,
                   'stat_err': mixer.get_stat_err(),
                   'sys_err': mixer.get_MC_err(),
                   'num_iterations': iteration,
-                  'unfolding_matrix': mixer.Mij}
+                  'unfolding_matrix': mixer.Mij,
+                  'covariance_matrix': mixer.get_cov()}
 
         if regularizer:
             # Will want the nonregularized distribution for the final iteration
