@@ -220,19 +220,49 @@ class KS(TestStat):
         return stat
 
 
+class CONV(TestStat):
+    """Convergence test statistic 
+
+    Notes
+    -----
+    Uses numpy.allclose to check if covariance matrix has converged;
+    i.e. it is indentical for this iteration and the last
+    """
+    def calc(self, dist1, dist2):
+        """Calculate the test statistic between two input distributions
+
+        Parameters
+        ----------
+        dist1 : array_like
+            Input distribution.
+        dist2 : array_like
+            Input distribution.
+
+        Returns
+        -------
+        stat : float
+            Test statistic
+        """
+        stat = not np.allclose(dist1, dist2, rtol=self.tol, atol=self.tol)
+        self.stat = stat
+
+        return stat
+
+
 TEST_STATISTICS = {"chi2": Chi2,
                    "bf": BF,
                    "rmd": RMD,
                    "ks": KS,
+                   "conv": CONV,
                    }
 
 
 def get_ts(name='ks'):
-    """Convenience function for retrieving test statisitc calculators
+    """Convenience function for retrieving test statistic calculators
 
     Parameters
     ----------
-    name : {'ks', 'chi2', 'bf', 'rmd'}
+    name : {'ks', 'chi2', 'bf', 'rmd', 'conv'}
         Name of test statistic.
 
     Returns

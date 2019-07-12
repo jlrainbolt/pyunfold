@@ -38,7 +38,7 @@ def iterative_unfold(data=None, data_err=None, response=None,
         Prior distribution to use in unfolding. If None, then a uniform
         (or flat) prior will be used. If array_like, then must have the same
         shape as ``efficiencies`` (default is None).
-    ts : {'ks', 'chi2', 'bf', 'rmd'}
+    ts : {'ks', 'chi2', 'bf', 'rmd', 'conv'}
         Test statistic to use for stopping condition (default is 'ks').
         For more information about the available test statistics, see the
         `Test Statistics API documentation <api.rst#test-statistics>`__.
@@ -164,6 +164,7 @@ def iterative_unfold(data=None, data_err=None, response=None,
     unfolding_iters = _unfold(prior=n_c,
                               mixer=mixer,
                               ts_func=ts_func,
+                              ts=ts,
                               max_iter=max_iter,
                               callbacks=callbacks)
 
@@ -174,7 +175,7 @@ def iterative_unfold(data=None, data_err=None, response=None,
         return unfolded_result
 
 
-def _unfold(prior=None, mixer=None, ts_func=None, max_iter=100,
+def _unfold(prior=None, mixer=None, ts_func=None, ts=None, max_iter=100,
             callbacks=None):
     """Perform iterative unfolding
 
@@ -203,6 +204,7 @@ def _unfold(prior=None, mixer=None, ts_func=None, max_iter=100,
     callbacks.on_unfolding_begin()
 
     current_n_c = prior.copy()
+    current_n_cov = mixer.get_cov()
     iteration = 0
     unfolding_iters = []
     while not ts_func.pass_tol() and iteration < max_iter:
@@ -223,7 +225,10 @@ def _unfold(prior=None, mixer=None, ts_func=None, max_iter=100,
             unfolded_nonregularized = status['unfolded'].copy()
             regularizer.on_iteration_end(iteration=iteration, status=status)
 
-        ts_iter = ts_func.calc(status['unfolded'], current_n_c)
+        if ts == 'conv':
+            ts_iter = ts_func.calc(status['covariance_matrix'], current_n_cov)
+        else:
+            ts_iter = ts_func.calc(status['unfolded'], current_n_c)
         status['ts_iter'] = ts_iter
         status['ts_stopping'] = ts_func.tol
 
@@ -232,6 +237,7 @@ def _unfold(prior=None, mixer=None, ts_func=None, max_iter=100,
 
         # Updated current distribution for next iteration of unfolding
         current_n_c = status['unfolded'].copy()
+        current_n_cov = status['covariance_matrix'].copy()
 
     # Convert unfolding_iters list of dictionaries to a pandas DataFrame
     unfolding_iters = pd.DataFrame.from_records(unfolding_iters)
